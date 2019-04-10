@@ -1,0 +1,10 @@
+# Comentários
+
+ * Evitar arquivos com _; mv influxdb_fs.py influx.py
+ * Pensar num nome melhor para o nome da NApp;
+    mv time_series timeseries - Cronos
+ * verify_database is missing;
+ * Validar melhor o settings
+ * Remover o _client da classe; (Mover _client pro init)
+
+ * Tratar melhor as excessoes na hora de salver os dados

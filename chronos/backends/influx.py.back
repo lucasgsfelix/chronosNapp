@@ -1,0 +1,118 @@
+"""InfluxDB backend"""
+
+import sys
+import time
+from datetime import datetime
+
+import influxdb
+
+import settings
+
+from utils import Utils
+
+
+def fill_value(value, namespace, timestamp):
+    """Method responsible to fill the data values."""
+    if isinstance(value, list):
+        data = []
+        if isinstance(namespace, list):
+            if len(value) != len(namespace):
+                assert "Error inserting data to InfluxDB."
+            else:
+                for index, name in enumerate(namespace):
+                    data.append([{'measurement': name, 'time': timestamp,
+                                  'fields': {'value': value[index]}}])
+        else:
+            for index, name in enumerate(value):
+                data.append([{'measurement': namespace, 'time': timestamp,
+                              'fields': {'value': value[index]}}])
+    else:
+        data = [{'measurement': namespace, 'time': timestamp,
+                 'fields': {'value': value}}]
+
+    return data
+
+
+class InfluxBackend:
+    """This Backend is responsible to the connection with InfluxDB."""
+    client = None
+    params = {'HOST': 'localhost', 'PORT': 8086,
+              'USER': '', 'PASS': '', 'DBNAME': 'test'}
+
+    def __init__(self, settings):
+        self._read_config(settings)
+        try:
+            self.params['HOST'] = settings.BACKENDS['INFLUXDB']['HOST']
+            self.params['PORT'] = settings.BACKENDS['INFLUXDB']['HOST']
+        except KeyError:
+            raise Exception("Could not read influxdb settings.")
+
+
+        for i in settings.BACKENDS['INFLUXDB']:
+            if not settings.BACKENDS['INFLUXDB'][i] is None:
+                self.params[i] = settings.BACKENDS['INFLUXDB'][i]
+
+        self.client = influxdb.InfluxDBClient(host=self.params['HOST'],
+                                              port=self.params['PORT'],
+                                              username=self.params['USER'],
+                                              password=self.params['PASS'],
+                                              database=self.params['DBNAME'])
+
+    # namespace = 'beraldo.foo.bar.switches.1283712.interfaces.1.bytes.in'
+    # namespace = 'beraldo.foo.bar.switches.1283712.interfaces.1.bytes.out'
+    # namespace = 'beraldo.foo.bar.switches.1283712.interfaces.1.packets.in'
+    # namespace = 'beraldo.foo.bar.switches.1283712.interfaces.1.packets.out'
+
+    def save(self, namespace, value, timestamp=None):
+        """Insert the data on influx using a JSON Format"""
+        if timestamp is None:
+            timestamp = datetime.utcfromtimestamp(time.time())
+            timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+        data = fill_value(value, namespace, timestamp)
+        self._verify_database(create_database=True)
+        try:
+            self.client.write_points(data)
+        except Exception:
+            assert "Error inserting data to InfluxDB."
+
+    def delete(self, namespace, start_timestamp, end_timestamp=None):
+        """Delete the entire database --
+        start_timestamp and end_timestamp most be a timestamp"""
+        delete_start_query = ('DELETE FROM ' + namespace + ' WHERE time >' +
+                              str(start_timestamp))
+        if start_timestamp is not None:
+            delete_end_query = "' and time < '"+str(end_timestamp)+"'"
+            Utils.validate_timestamp(start_timestamp, end_timestamp)
+            self.client.query(delete_start_query+delete_end_query)
+        else:
+            self.client.query(delete_start_query)
+
+    def get(self, namespace, start_timestamp=None, end_timestamp=None):
+        """Make a query to retrieve something in the database."""
+        if start_timestamp is None:
+            print("SELECT * FROM "+namespace)
+            print(self.params)
+            return self.client.query("SELECT * FROM "+namespace)
+
+        time_start_query = ("SELECT value FROM " + namespace + " WHERE time >'" +
+                            str(start_timestamp) + "'")
+        
+        if end_timestamp is not None:
+            time_end_query = " and time < '"+str(end_timestamp)+"'"
+            utils_obj = Utils()
+            utils_obj.validate_timestamp(start_timestamp, end_timestamp)
+            return self.client.query(time_start_query+time_end_query)
+        print("query ",time_start_query)
+        return self.client.query(time_start_query)
+
+    def _verify_database(self, create_database):
+        """Verify if a database exists"""
+        data_list = self.client.get_list_database()
+        if not any(self.params['DBNAME'] == db['name'] for db in data_list):
+            if create_database is True:
+                self.client.create_database(self.params['DBNAME'])
+            else:
+                assert "The database does not exists"
+
+
