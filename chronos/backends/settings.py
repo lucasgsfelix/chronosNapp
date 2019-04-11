@@ -7,7 +7,7 @@ BACKENDS['INFLUXDB'] = {
 				'PASS': 'bar',
 				'PORT': 8086,
 				'HOST': 'localhost',
-                                'DBNAME':'NOAA_water_database'
+				'DBNAME':'NOAA_water_database'
 }
 BACKENDS['CSV'] = {
 				'USER': 'foo',

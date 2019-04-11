@@ -47,7 +47,20 @@ class InfluxBackend:
         self._get_points(namespace, start_timestamp, end_timestamp)
 
     def _read_config(self, settings):
-        self._params = {}
+        
+        self.params = {'HOST':None,'PORT':None:'USER':None,'PASS':None,'DBNAME':None}
+        for i in settings.BACKENDS['INFLUXDB']:
+            self.params[i] = settings.BACKENDS['INFLUXDB'][i]
+
+        exist = list(filter(lambda x: x == None, self.params.values()))
+        if len(exist): # exists None in the list
+            if self.params['DBNAME'] is None:
+                raise Exception("Error. Most specify database name.")
+            
+            if self.params['USER'] is None and self.params['PASS']:
+                raise Exception("Error. Most specify user's login.")
+            elif self.params['PASS'] and self.params['USER']:
+                raise Exception("Error. Most specify user's password.")
 
     def _start_client(self):
         try:
