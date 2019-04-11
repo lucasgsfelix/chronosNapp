@@ -34,21 +34,21 @@ class InfluxBackend:
     def delete(self, namespace, start_timestamp=None, end_timestamp=None):
         """Delete the entire database --
         start_timestamp and end_timestamp most be a timestamp"""
-        self._validate_namespace(namespace)
+        self._validate_namespace('.'.join(namespace.split('.')[:-1]))
         utils_obj = Utils()
         utils_obj.validate_timestamp(start_timestamp, end_timestamp)
         self._delete_points(namespace, start_timestamp, end_timestamp)
 
     def get(self, namespace, start_timestamp=None, end_timestamp=None):
         """Make a query to retrieve something in the database."""
-        self._validate_namespace(namespace)
+        self._validate_namespace('.'.join(namespace.split('.')[:-1]))
         utils_obj = Utils()
         utils_obj.validate_timestamp(start_timestamp, end_timestamp)
         self._get_points(namespace, start_timestamp, end_timestamp)
 
     def _read_config(self, settings):
         
-        self.params = {'HOST':None,'PORT':None:'USER':None,'PASS':None,'DBNAME':None}
+        self.params = {'HOST':None,'PORT':None,'USER':None,'PASS':None,'DBNAME':None}
         for i in settings.BACKENDS['INFLUXDB']:
             self.params[i] = settings.BACKENDS['INFLUXDB'][i]
 
@@ -102,7 +102,7 @@ class InfluxBackend:
     def _delete_points(self, namespace, start_timestamp, end_timestamp):
 
         query = {'query': 'DELETE FROM ' + namespace,
-                'start':" WHERE time > '" + str(start_timestamp)+"'"
+                'start':" WHERE time > '" + str(start_timestamp)+"'",
                 'end':" and time < '"+str(end_timestamp)+"'"}
 
         result_query = self._query_assemble(query)
@@ -112,7 +112,7 @@ class InfluxBackend:
     def _get_points(self, namespace, start_timestamp, end_timestamp):
 
         query = {'query': 'SELECT * FROM ' + namespace,
-                'start':" WHERE time > '" + str(start_timestamp)+"'"
+                'start':" WHERE time > '" + str(start_timestamp)+"'",
                 'end':" and time < '"+str(end_timestamp)+"'"}
         
         result_query = self._query_assemble(query)
@@ -140,4 +140,4 @@ class InfluxBackend:
             all_nspace = self._client.get_list_measurements()
             exist = filter(lambda x: x['name'] == self.namespace, all_nspace)
             if not exist:
-                raise Exception("Required namespace does exist.")
+                raise Exception("Required namespace does not exist.")
