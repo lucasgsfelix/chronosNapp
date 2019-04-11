@@ -63,21 +63,17 @@ class InfluxBackend:
                 raise Exception("Error. Most specify user's password.")
 
     def _start_client(self):
-        try:
-            self._client = InfluxDBClient(host=self._host,
-                                          port=self._port,
-                                          username = self._username,
-                                          password = self._password,
-                                          database = self._database)
-        except Exception:
-            self._client = None # TODO: Tratar as exceptions
+        self._client = InfluxDBClient(host=self._host,
+                                      port=self._port,
+                                      username = self._username,
+                                      password = self._password,
+                                      database = self._database)
 
     def _create_database(self):
         try:
             self._client.create_database(self._db_name)
         except Exception:
-            pass # TODO: Tratar as exceptions
-
+            print("Error creating database")
     def _write_endpoints(self, data, create_database=True):
         if not self._get_database() and create_database:
             self._create_database()
