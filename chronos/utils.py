@@ -1,13 +1,14 @@
-#pylint: disable=mixed-indentation
 """Utility features for all backends"""
 from datetime import datetime
 
-class Utils:
-	"""Utility methods for the backends"""
-	def validate_timestamp(self, start_timestamp, end_timestamp):
-		"""Method use for validate the time stamp,
-		avoiding that end_timestamp be smaller than start_timestamp"""
-		start_timestamp = datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S").timestamp()
-		end_timestamp = datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S").timestamp()
-		if start_timestamp > end_timestamp:
-			assert "Invalid Data Range !"
+def now():
+    return datetime.utcnow().isoformat()
+
+def validate_timestamp(start, end):
+    """Method use for validate the time stamp.
+
+    Avoiding that end be smaller than start.
+    """
+    
+    if start > end:
+        raise Exception("Invalid Data Range: {}, {}".format(start, end)
