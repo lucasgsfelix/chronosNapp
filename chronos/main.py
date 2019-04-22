@@ -6,7 +6,6 @@ import settings
 # from napps.kytos.Cronos import settings
 from backends.csvbackend import CSVBackend
 from backends.influx import InfluxBackend
-from backends.rrd import RRDBackend
 from kytos.core import KytosNApp, log
 
 
@@ -23,8 +22,6 @@ class Main(KytosNApp):
 
         if settings.DEFAULT_BACKEND == 'INFLUXDB':
             self.backend = InfluxBackend(settings)
-        elif settings.DEFAULT_BACKEND == 'RRD':
-            self.backend = RRDBackend()
         elif settings.DEFAULT_BACKEND == 'CSV':
             self.backend = CSVBackend(settings)
 
@@ -32,21 +29,13 @@ class Main(KytosNApp):
         """Save the data in one of the backends."""
         self.backend.save(namespace, value, timestamp)
 
-    def delete(self, namespace, start, end, file_name=None):
+    def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
+        self.backend.delete(namespace, start, end)
 
-        if settings.DEFAULT_BACKEND == 'CSV':
-            self.backend.delete(file_name, start, end)
-        else:
-            self.backend.delete(namespace, start, end)
-
-    def get(self, namespace, start=None, end=None, file_name=None):
+    def get(self, namespace, start=None, end=None):
         """Retrieve the data from one of the backends."""
-
-        if settings.DEFAULT_BACKEND == 'CSV':
-            self.backend.get(file_name, start, end)
-        else:
-            self.backend.get(namespace, start, end)
+        self.backend.get(namespace, start, end)
 
     def execute(self):
         """Run after the setup method execution.
