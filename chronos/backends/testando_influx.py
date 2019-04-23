@@ -15,8 +15,10 @@ def popula_banco_teste(quant_instancias):
 		valor = random.uniform(0, 1000)
 		if(start > end):
 			inf.save('teste.out', valor, start)
+			inf.save('teste.out', 'valor', start)
 		else:
 			inf.save('teste.out', valor, end)
+			inf.save('teste.out', 'valor', start)
 		i=i+1
 		exit()
 

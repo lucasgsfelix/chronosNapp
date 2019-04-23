@@ -28,8 +28,8 @@ def _query_assemble(clause, namespace, start, end, field=None):
     else:
         clause = clause + time_clause + "<'" + str(end) + "'"
 
-    #clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >= '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"
-    #print(clause)
+    '''clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >= 
+    '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"'''
 
     return clause
 
@@ -179,15 +179,17 @@ class InfluxBackend:
                 return True
 
     def _verify_value_type(self, value, namespace, field):
+        
         if isinstance(value, int):
             value = float(value)
-        clause = "SHOW FIELD KEYS"
-        result = self._client.query(clause)
+        
+        result = self._client.query("SHOW FIELD KEYS")
         result = list(filter(lambda x: x['fieldKey'] == field, result[namespace]))
         result = result[0]['fieldType']
+        
         if result == 'string':
             result = 'str'
         if type(value).__name__ != result:
             raise Exception("Error. The type of the field must be a '{}'."
-                            .format(type(value).__name__))
+                            .format(result))
         return value
