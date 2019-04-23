@@ -11,5 +11,5 @@ BACKENDS['INFLUXDB'] = {
 }
 BACKENDS['CSV'] = {
 				'USER': 'foo',
-				'PATH': ''
+				'PATH': 'data/'
 }

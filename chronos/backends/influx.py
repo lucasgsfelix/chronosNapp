@@ -7,16 +7,15 @@ from utils import validate_timestamp, now, iso_format_validation
 def _query_assemble(clause, namespace, start, end, field=None):
 
     if clause.upper() == 'SELECT':
-
         if field is None:
             clause = clause + ' * FROM ' + namespace
         else:
-            clause = clause + " " + field + " FROM "+namespace
+            clause = clause + " " + field + " FROM " + namespace
 
     elif clause.upper() == 'DELETE':
         clause = clause + ' FROM ' + namespace
     else:
-        raise Exception('Error. Clause not valid.')
+        raise Exception('Error. Invalid clause.')
 
     if start is None and end is None:
         return clause
@@ -29,6 +28,9 @@ def _query_assemble(clause, namespace, start, end, field=None):
     else:
         clause = clause + time_clause + "<'" + str(end) + "'"
 
+    '''clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >= 
+    '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"'''
+
     return clause
 
 
@@ -37,6 +39,9 @@ def _verify_namespace(namespace):
     if '.' in namespace:
         field = namespace.split('.')[-1]
         namespace = '.'.join(namespace.split('.')[:-1])
+
+    if field is None:
+        field = 'kytos'
     return namespace, field
 
 
@@ -56,6 +61,7 @@ class InfluxBackend:
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
         namespace, field = _verify_namespace(namespace)
+        self._verify_value_type(value, namespace, field)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
         data = [{
@@ -89,7 +95,6 @@ class InfluxBackend:
         namespace, field = _verify_namespace(namespace)
         if not self._namespace_exists(namespace):
             return None
-
         validate_timestamp(start, end)
         points = self._get_points(namespace, start, end, field)
         return points
@@ -155,7 +160,7 @@ class InfluxBackend:
 
         result = _query_assemble('SELECT', name, start, end, field)
         try:
-            return self._client.query(result)
+            return self._client.query(result, chunked=True, chunk_size=0)
         except Exception:
             raise Exception("Error. Field '{}' not valid." .format(field))
 
@@ -172,3 +177,19 @@ class InfluxBackend:
                 raise Exception("Required namespace does not exist.")
             else:
                 return True
+
+    def _verify_value_type(self, value, namespace, field):
+        
+        if isinstance(value, int):
+            value = float(value)
+        
+        result = self._client.query("SHOW FIELD KEYS")
+        result = list(filter(lambda x: x['fieldKey'] == field, result[namespace]))
+        result = result[0]['fieldType']
+        
+        if result == 'string':
+            result = 'str'
+        if type(value).__name__ != result:
+            raise Exception("Error. The type of the field must be a '{}'."
+                            .format(result))
+        return value
