@@ -4,35 +4,36 @@ from influxdb import InfluxDBClient
 from utils import validate_timestamp, now, iso_format_validation
 
 
-def _query_assemble(clause, namespace, start, end, field=None):
+def _query_assemble(clause, namespace, start, end, field=None,
+                    ip_clause=None, method=None):
 
     if clause.upper() == 'SELECT':
         if field is None:
-            clause = clause + ' * FROM ' + namespace
+            clause += f' * FROM {namespace}'
         else:
-            clause = clause + " " + field + " FROM " + namespace
+            if method is None:
+                clause += f" {field} FROM {namespace}"
+            else:
+                clause += f" {method}({field}) FROM {namespace}"
 
     elif clause.upper() == 'DELETE':
-        clause = clause + ' FROM ' + namespace
+        clause += f' FROM {namespace}'
     else:
-        raise Exception('Error. Invalid clause.')
+        raise Exception(f'Error. Invalid clause "{clause}".')
 
-    if start is None and end is None:
-        return clause
 
     time_clause = " WHERE time "
     if start is not None:
-        clause = clause + time_clause + ">'" + str(start) + "'"
+        clause += f"{time_clause} >'{str(start)}'"
         if end is not None:
-            clause = clause + " AND time <'" + str(end) + "'"
-    else:
-        clause = clause + time_clause + "<'" + str(end) + "'"
+            clause += f" AND time <'{str(end)}'"
+    elif start is None and end is not None:
+        clause += f"{time_clause} < '{str(end)}'"
 
-    '''clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >= 
-    '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"'''
+    if ip_clause is not None:
+        return clause
 
-    return clause
-
+    return clause + ip_clause
 
 def _verify_namespace(namespace):
     field = None
@@ -61,7 +62,7 @@ class InfluxBackend:
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
         namespace, field = _verify_namespace(namespace)
-        self._verify_value_type(value, namespace, field)
+        value = self._verify_value_type(value, namespace, field)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
         data = [{
@@ -88,7 +89,8 @@ class InfluxBackend:
 
         self._delete_points(namespace, start, end)
 
-    def get(self, namespace, start=None, end=None):
+    def get(self, namespace, start=None, end=None,
+            method=None, fill=None, group=None):
         """Make a query to retrieve something in the database."""
         start = iso_format_validation(start)
         end = iso_format_validation(end)
@@ -96,7 +98,7 @@ class InfluxBackend:
         if not self._namespace_exists(namespace):
             return None
         validate_timestamp(start, end)
-        points = self._get_points(namespace, start, end, field)
+        points = self._get_points(namespace, start, end, field, method, fill, group)
         return points
 
     def _read_config(self, settings):
@@ -156,13 +158,21 @@ class InfluxBackend:
 
         self._client.query(result)
 
-    def _get_points(self, name, start, end, field=None):
+    def _get_points(self, name, start, end,
+                    field=None, method=None, fill=None, group=None):
 
-        result = _query_assemble('SELECT', name, start, end, field)
+        if group is None or fill is None:
+            result = _query_assemble('SELECT', name, start, end, field,
+                                     None, method)
+        else:
+            ip_clause = f" GROUP BY time({group}) fill({fill})"
+            result = _query_assemble('SELECT', name, start, end, field,
+                                     ip_clause, method)
         try:
             return self._client.query(result, chunked=True, chunk_size=0)
         except Exception:
             raise Exception("Error. Field '{}' not valid." .format(field))
+
 
     def _namespace_exists(self, namespace):
 
@@ -179,17 +189,24 @@ class InfluxBackend:
                 return True
 
     def _verify_value_type(self, value, namespace, field):
-        
-        if isinstance(value, int):
+
+        if isinstance(value, int) and not isinstance(value, bool):
             value = float(value)
-        
-        result = self._client.query("SHOW FIELD KEYS")
-        result = list(filter(lambda x: x['fieldKey'] == field, result[namespace]))
-        result = result[0]['fieldType']
-        
+
+        f_key, f_type = 'fieldKey', 'fieldType'
+        clause = f"SHOW FIELD KEYS ON {self._database} FROM {namespace}"
+        q_result = list(self._client.query(clause)[namespace])
+        result = list(filter(lambda x: x[f_key] == field, q_result))[0][f_type]
+
+        if not result:
+            return value
+
         if result == 'string':
             result = 'str'
+        elif result == 'boolean':
+            result = 'bool'
+
         if type(value).__name__ != result:
-            raise Exception("Error. The type of the field must be a '{}'."
+            raise Exception("Error. The type of the field must be '{}'."
                             .format(result))
         return value
