@@ -33,9 +33,9 @@ class Main(KytosNApp):
         """Delete the data in one of the backends."""
         self.backend.delete(namespace, start, end)
 
-    def get(self, namespace, start=None, end=None):
+    def get(self, namespace, start=None, end=None, method=None, fill=None, group=None):
         """Retrieve the data from one of the backends."""
-        self.backend.get(namespace, start, end)
+        self.backend.get(namespace, start, end, method, fill, group)
 
     def execute(self):
         """Run after the setup method execution.

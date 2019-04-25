@@ -1,4 +1,6 @@
 """InfluxDB backend"""
+import re
+
 from influxdb import InfluxDBClient
 
 from utils import validate_timestamp, now, iso_format_validation
@@ -21,7 +23,6 @@ def _query_assemble(clause, namespace, start, end, field=None,
     else:
         raise Exception(f'Error. Invalid clause "{clause}".')
 
-
     time_clause = " WHERE time "
     if start is not None:
         clause += f"{time_clause} >'{str(start)}'"
@@ -30,17 +31,20 @@ def _query_assemble(clause, namespace, start, end, field=None,
     elif start is None and end is not None:
         clause += f"{time_clause} < '{str(end)}'"
 
-    print(clause + str(ip_clause))
     if ip_clause is None:
         return clause
 
-    '''clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >=
-    '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"'''
     return clause + ip_clause
+
 
 def _verify_namespace(namespace):
     field = None
-    if '.' in namespace:
+    if namespace is None:
+        raise Exception("Error. Namespace cannot be NoneType.")
+    elif not isinstance(namespace, str) or not re.match(r'\S+', namespace):
+        raise Exception(f"Error. Namespace '{namespace}' most be a string."
+                        f" Not {type(namespace).__name__}.")
+    elif '.' in namespace:
         field = namespace.split('.')[-1]
         namespace = '.'.join(namespace.split('.')[:-1])
     return namespace, field
@@ -98,7 +102,8 @@ class InfluxBackend:
         if not self._namespace_exists(namespace):
             return None
         validate_timestamp(start, end)
-        points = self._get_points(namespace, start, end, field, method, fill, group)
+        points = self._get_points(namespace, start, end,
+                                  field, method, fill, group)
         return points
 
     def _read_config(self, settings):
@@ -172,7 +177,6 @@ class InfluxBackend:
             return self._client.query(result, chunked=True, chunk_size=0)
         except Exception:
             raise Exception("Error. Query {} not valid" .format(result))
-
 
     def _namespace_exists(self, namespace):
 

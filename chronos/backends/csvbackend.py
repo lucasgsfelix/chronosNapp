@@ -92,7 +92,7 @@ class CSVBackend:
 
         dataframe.to_csv(file, sep=',', header=True, mode='w', index=False)
 
-    def get(self, file, start=None, end=None):
+    def get(self, file, start=None, end=None, method=None, fill=None, group=None):
         """Retrieve data from a csv file"""
         dataframe, file = self._load_file(file)
         search = _make_search(start, end, dataframe)
