@@ -7,7 +7,7 @@ from utils import validate_timestamp, now, iso_format_validation
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
-                    ip_clause=None, method=None):
+                    method=None, group=None, fill=None):
 
     if clause.upper() == 'SELECT':
         if field is None:
@@ -31,10 +31,12 @@ def _query_assemble(clause, namespace, start, end, field=None,
     elif start is None and end is not None:
         clause += f"{time_clause} < '{str(end)}'"
 
-    if ip_clause is None:
-        return clause
+    if group is not None:
+        clause += f" GROUP BY time{group}"
+    if fill is not None:
+        clause += f" fill{fill}"
 
-    return clause + ip_clause
+    return clause
 
 
 def _verify_namespace(namespace):
@@ -166,13 +168,8 @@ class InfluxBackend:
     def _get_points(self, name, start, end,
                     field=None, method=None, fill=None, group=None):
 
-        if group is None or fill is None:
-            result = _query_assemble('SELECT', name, start, end, field,
-                                     None, method)
-        else:
-            ip_clause = f" GROUP BY time({group}) fill({fill})"
-            result = _query_assemble('SELECT', name, start, end, field,
-                                     ip_clause, method)
+        result = _query_assemble('SELECT', name, start, end, field,
+                                 method, group, fill)
         try:
             return self._client.query(result, chunked=True, chunk_size=0)
         except Exception:
