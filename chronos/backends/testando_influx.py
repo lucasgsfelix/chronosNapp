@@ -25,7 +25,7 @@ def popula_banco_teste(quant_instancias):
 
 inf = influx.InfluxBackend(settings)
 random.seed()
-popula_banco_teste(100)
+#popula_banco_teste(100)
 '''inf.save('teste.out', 123.12, '2019-03-15T18:38:39.648674048Z')
 inf.save('teste.out', 123.12, '2019-03-15T18:38:39.648674048Z')
 inf.save('teste.out', 123.12, '2019-03-15T18:38:39.648674048Z')
@@ -33,4 +33,4 @@ inf.save('teste.out', 123.12, '2019-03-15T18:38:39.648674048Z')
 inf.save('teste.in', "string", '2019-03-15T18:38:39.648674048Z')'''
 #print(inf.get('teste.out', 0, time.time()))
 #inf.delete('teste', '2017-03-15', '2019-04-15')
-#print(inf.get('teste'))
+print(inf.get('teste.out', None, None, 'mean', 'None', '1000d'))

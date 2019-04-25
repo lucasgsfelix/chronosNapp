@@ -30,9 +30,12 @@ def _query_assemble(clause, namespace, start, end, field=None,
     elif start is None and end is not None:
         clause += f"{time_clause} < '{str(end)}'"
 
-    if ip_clause is not None:
+    print(clause + str(ip_clause))
+    if ip_clause is None:
         return clause
 
+    '''clause = "SELECT MEAN(out) FROM "+namespace+" WHERE time >=
+    '"+str(start)+"' AND time <= '"+str(end)+"' GROUP BY time(1000d) fill(linear)"'''
     return clause + ip_clause
 
 def _verify_namespace(namespace):
@@ -40,9 +43,6 @@ def _verify_namespace(namespace):
     if '.' in namespace:
         field = namespace.split('.')[-1]
         namespace = '.'.join(namespace.split('.')[:-1])
-
-    if field is None:
-        field = 'kytos'
     return namespace, field
 
 
@@ -171,7 +171,7 @@ class InfluxBackend:
         try:
             return self._client.query(result, chunked=True, chunk_size=0)
         except Exception:
-            raise Exception("Error. Field '{}' not valid." .format(field))
+            raise Exception("Error. Query {} not valid" .format(result))
 
 
     def _namespace_exists(self, namespace):
