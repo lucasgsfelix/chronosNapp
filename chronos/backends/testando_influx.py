@@ -33,4 +33,7 @@ inf.save('teste.out', 123.12, '2019-03-15T18:38:39.648674048Z')
 inf.save('teste.in', "string", '2019-03-15T18:38:39.648674048Z')'''
 #print(inf.get('teste.out', 0, time.time()))
 #inf.delete('teste', '2017-03-15', '2019-04-15')
-print(inf.get('teste', 0, time.time(), 'mean', 'ling', '500d'))
+result = inf.get('teste', 0, time.time(), 'mean', 'linear', '500d')
+print(result)
+if not result:
+	print("OIOAIOIOAS")

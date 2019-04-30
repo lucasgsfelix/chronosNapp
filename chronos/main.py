@@ -2,6 +2,7 @@
 
 Napp to store itens along time
 """
+from flask import jsonify
 import settings
 # from napps.kytos.Cronos import settings
 from backends.csvbackend import CSVBackend
@@ -29,8 +30,10 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<value>/<timestamp>', methods=['POST'])
     def save(self, namespace, value, timestamp=None):
         """Save the data in one of the backends."""
+
         self.backend.save(namespace, value, timestamp)
 
+        return jsonify({"response": "Value saved !"}), 200
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/<start>', methods=['DELETE'])
@@ -40,10 +43,17 @@ class Main(KytosNApp):
         """Delete the data in one of the backends."""
         self.backend.delete(namespace, start, end)
 
+        return jsonify({"response": "Values deleted !"}), 200
+
     def get(self, namespace, start=None, end=None, method=None,
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
-        self.backend.get(namespace, start, end, method, fill, group)
+
+        result = self.backend.get(namespace, start, end, method, fill, group)
+        if not result:
+            return jsonify({"response": "Not Found"}), 404
+
+        return jsonify(result), 200
 
     def execute(self):
         """Run after the setup method execution.
