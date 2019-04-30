@@ -32,9 +32,9 @@ def _query_assemble(clause, namespace, start, end, field=None,
         clause += f"{time_clause} < '{str(end)}'"
 
     if group is not None:
-        clause += f" GROUP BY time{group}"
+        clause += f" GROUP BY time({group})"
     if fill is not None:
-        clause += f" fill{fill}"
+        clause += f" fill({fill})"
 
     return clause
 
@@ -68,7 +68,7 @@ class InfluxBackend:
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
         namespace, field = _verify_namespace(namespace)
-        value = self._verify_value_type(value, namespace, field)
+        value = self._verify_value_type(namespace, field, value)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
         data = [{
@@ -161,19 +161,19 @@ class InfluxBackend:
 
     def _delete_points(self, namespace, start, end):
 
-        result = _query_assemble('DELETE', namespace, start, end)
+        query = _query_assemble('DELETE', namespace, start, end)
 
-        self._client.query(result)
+        self._client.query(query)
 
     def _get_points(self, name, start, end,
                     field=None, method=None, fill=None, group=None):
 
-        result = _query_assemble('SELECT', name, start, end, field,
-                                 method, group, fill)
+        query = _query_assemble('SELECT', name, start, end, field,
+                                method, group, fill)
         try:
-            return self._client.query(result, chunked=True, chunk_size=0)
-        except Exception:
-            raise Exception("Error. Query {} not valid" .format(result))
+            return self._client.query(query, chunked=True, chunk_size=0)
+        except TypeError as exception: # I don't know if this is the appropriated error
+            raise Exception("Error. Query {} not valid" .format(query))
 
     def _namespace_exists(self, namespace):
 
@@ -189,7 +189,7 @@ class InfluxBackend:
             else:
                 return True
 
-    def _verify_value_type(self, value, namespace, field):
+    def _verify_value_type(self, namespace, field, value):
 
         if isinstance(value, int) and not isinstance(value, bool):
             value = float(value)
@@ -197,17 +197,19 @@ class InfluxBackend:
         f_key, f_type = 'fieldKey', 'fieldType'
         clause = f"SHOW FIELD KEYS ON {self._database} FROM {namespace}"
         q_result = list(self._client.query(clause)[namespace])
-        result = list(filter(lambda x: x[f_key] == field, q_result))[0][f_type]
+        # q_result returns a query result. The values in q_result is a
+        # dictionary containing fields names and their types
+        column_type = [r[f_type] for r in q_result if r[f_key] == field][0]
 
-        if not result:
+        if not column_type:
             return value
 
-        if result == 'string':
-            result = 'str'
-        elif result == 'boolean':
-            result = 'bool'
+        if column_type == 'string':
+            column_type = 'str'
+        elif column_type == 'boolean':
+            column_type = 'bool'
 
-        if type(value).__name__ != result:
+        if type(value).__name__ != column_type:
             raise Exception("Error. The type of the field must be '{}'."
-                            .format(result))
+                            .format(column_type))
         return value
