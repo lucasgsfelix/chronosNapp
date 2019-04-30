@@ -52,6 +52,10 @@ def _verify_namespace(namespace):
     return namespace, field
 
 
+class InvalidQuery(Exception):
+    """Exception thrown when the assembled query is not valid."""
+
+
 class InfluxBackend:
     """This Backend is responsible to the connection with InfluxDB."""
     def __init__(self, settings):
@@ -147,7 +151,7 @@ class InfluxBackend:
 
         try:
             self._client.write_points(data)
-        except Exception:
+        except InvalidQuery:
             raise Exception("Error inserting data to InfluxDB.")
 
     def _get_database(self):
@@ -172,7 +176,7 @@ class InfluxBackend:
                                 method, group, fill)
         try:
             return self._client.query(query, chunked=True, chunk_size=0)
-        except TypeError as exception: # I don't know if this is the appropriated error
+        except InvalidQuery:
             raise Exception("Error. Query {} not valid" .format(query))
 
     def _namespace_exists(self, namespace):

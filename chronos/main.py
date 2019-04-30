@@ -6,7 +6,7 @@ import settings
 # from napps.kytos.Cronos import settings
 from backends.csvbackend import CSVBackend
 from backends.influx import InfluxBackend
-from kytos.core import KytosNApp, log
+from kytos.core import KytosNApp, log, rest
 
 
 class Main(KytosNApp):
@@ -25,15 +25,23 @@ class Main(KytosNApp):
         elif settings.DEFAULT_BACKEND == 'CSV':
             self.backend = CSVBackend(settings)
 
+    @rest('v1/<namespace>/<value>', methods=['POST'])
+    @rest('v1/<namespace>/<value>/<timestamp>', methods=['POST'])
     def save(self, namespace, value, timestamp=None):
         """Save the data in one of the backends."""
         self.backend.save(namespace, value, timestamp)
 
+
+    @rest('v1/<namespace>/', methods=['DELETE'])
+    @rest('v1/<namespace>/<start>', methods=['DELETE'])
+    @rest('v1/<namespace>/<end>', methods=['DELETE'])
+    @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
         self.backend.delete(namespace, start, end)
 
-    def get(self, namespace, start=None, end=None, method=None, fill=None, group=None):
+    def get(self, namespace, start=None, end=None, method=None,
+            fill=None, group=None):
         """Retrieve the data from one of the backends."""
         self.backend.get(namespace, start, end, method, fill, group)
 
@@ -49,7 +57,3 @@ class Main(KytosNApp):
     def shutdown(self):
         """Execute before tha NApp is unloaded."""
         log.info("Time Series NApp is shutting down.")
-
-
-teste = Main(KytosNApp)
-print(teste.get("average_temperature"))
