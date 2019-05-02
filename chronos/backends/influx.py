@@ -155,8 +155,8 @@ class InfluxBackend:
         except InvalidQuery:
             raise Exception("Error inserting data to InfluxDB.")
         except exceptions.InfluxDBClientError as e:
-            error = e
-            print(f"Error! {error}")
+            raise ValueError(f"Error! {e}")
+
 
     def _get_database(self):
         """Verify if a database exists."""

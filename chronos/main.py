@@ -32,6 +32,8 @@ class Main(KytosNApp):
         """Save the data in one of the backends."""
 
         self.backend.save(namespace, value, timestamp)
+        #if result == True:
+         #   return jsonify({"response": "Not Found"}), 404
 
         return jsonify({"response": "Value saved !"}), 200
 
@@ -41,7 +43,9 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
-        self.backend.delete(namespace, start, end)
+        result = self.backend.delete(namespace, start, end)
+        #if result == True:
+         #   return jsonify({"response": "Not Found"}), 404
 
         return jsonify({"response": "Values deleted !"}), 200
 
