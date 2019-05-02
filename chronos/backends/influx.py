@@ -2,6 +2,7 @@
 import re
 
 from influxdb import InfluxDBClient
+from influxdb import exceptions
 
 from utils import validate_timestamp, now, iso_format_validation
 
@@ -69,6 +70,9 @@ class InfluxBackend:
 
         timestamp must be on ISO-8601 format.
         """
+        if not isinstance(value, bool) and isinstance(value, int):
+            value = float(value)
+
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
         namespace, field = _verify_namespace(namespace)
@@ -150,6 +154,9 @@ class InfluxBackend:
             self._client.write_points(data)
         except InvalidQuery:
             raise Exception("Error inserting data to InfluxDB.")
+        except exceptions.InfluxDBClientError as e:
+            error = e
+            print(f"Error! {error}")
 
     def _get_database(self):
         """Verify if a database exists."""

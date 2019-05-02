@@ -24,13 +24,6 @@ def popula_banco_teste(quant_instancias):
 		i=i+1
 		exit()
 
-def test_connection():
 
-    napp = main.Main(KytosNApp)
-    with napp.app_context():valor = (napp.delete("teste2", 0, 0))
-
-'''app = Flask(__name__)
-napp = main.Main(KytosNApp)
-valor = (napp.delete("teste2", 0, 0))
-print(valor)'''
-test_connection()
+inf = influx.InfluxBackend(settings)
+popula_banco_teste(100)
