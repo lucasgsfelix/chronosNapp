@@ -72,7 +72,6 @@ class InfluxBackend:
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
         namespace, field = _verify_namespace(namespace)
-        value = self._verify_value_type(namespace, field, value)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
         data = [{
@@ -134,13 +133,11 @@ class InfluxBackend:
         self._database = params['DBNAME']
 
     def _start_client(self):
-
         self._client = InfluxDBClient(host=self._host,
                                       port=self._port,
                                       username=self._username,
                                       password=self._password,
                                       database=self._database)
-
     def _create_database(self):
         self._client.create_database(self._database)
 
@@ -192,28 +189,3 @@ class InfluxBackend:
                 raise Exception("Required namespace does not exist.")
             else:
                 return True
-
-    def _verify_value_type(self, namespace, field, value):
-
-        if isinstance(value, int) and not isinstance(value, bool):
-            value = float(value)
-
-        f_key, f_type = 'fieldKey', 'fieldType'
-        clause = f"SHOW FIELD KEYS ON {self._database} FROM {namespace}"
-        q_result = list(self._client.query(clause)[namespace])
-        # q_result returns a query result. The values in q_result is a
-        # dictionary containing fields names and their types
-        column_type = [r[f_type] for r in q_result if r[f_key] == field][0]
-
-        if not column_type:
-            return value
-
-        if column_type == 'string':
-            column_type = 'str'
-        elif column_type == 'boolean':
-            column_type = 'bool'
-
-        if type(value).__name__ != column_type:
-            raise Exception("Error. The type of the field must be '{}'."
-                            .format(column_type))
-        return value
