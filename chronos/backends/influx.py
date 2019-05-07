@@ -156,9 +156,10 @@ class InfluxBackend:
             self._client.write_points(data)
         except exceptions.InfluxDBClientError as error:
             log.error(error)
+            return 400
         except InvalidQuery:
             log.error("Error inserting data to InfluxDB.")
-            # return 400
+            return 400
 
     def _get_database(self):
         """Verify if a database exists."""
