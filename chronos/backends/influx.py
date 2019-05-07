@@ -83,7 +83,7 @@ class InfluxBackend:
             'time': timestamp,
             'fields': {field: value}
         }]
-        self._write_endpoints(data)
+        return self._write_endpoints(data)
 
     def delete(self, namespace, start=None, end=None):
         """Delete the entire database.
@@ -152,11 +152,11 @@ class InfluxBackend:
 
         try:
             self._client.write_points(data)
+        except exceptions.InfluxDBClientError as error:
+            return error
         except InvalidQuery:
             raise Exception("Error inserting data to InfluxDB.")
-        except exceptions.InfluxDBClientError as e:
-            raise ValueError(f"Error! {e}")
-
+            # return 400
 
     def _get_database(self):
         """Verify if a database exists."""

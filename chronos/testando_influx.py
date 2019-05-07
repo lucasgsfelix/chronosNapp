@@ -11,18 +11,21 @@ from flask import Flask
 def popula_banco_teste(quant_instancias):
 
 	i = 0
+	erro = []
 	while(i<quant_instancias):
 		start = random.uniform(0, 1555953596)
 		end = random.uniform(0, 1555953596)
 		valor = random.uniform(0, 1000)
 		if(start > end):
-			inf.save('teste2.out', False, start)
-			#inf.save('teste2.out', 'valor', start)
+			e=inf.save('teste2.tes', valor, start)
 		else:
-			inf.save('teste2.out', False, end)
-			#inf.save('teste2.out', 'valor', start)
+			if i%2== 1:
+				e = inf.save('teste2.tes', 'valor', end)
+			e=inf.save('teste2.tes', valor, end)
+		if(e is not None):
+			erro.append(e)
 		i=i+1
-		exit()
+	print(len(erro))
 
 
 inf = influx.InfluxBackend(settings)

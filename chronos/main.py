@@ -31,9 +31,9 @@ class Main(KytosNApp):
     def save(self, namespace, value, timestamp=None):
         """Save the data in one of the backends."""
 
-        self.backend.save(namespace, value, timestamp)
-        #if result == True:
-         #   return jsonify({"response": "Not Found"}), 404
+        result = self.backend.save(namespace, value, timestamp)
+        if result is not None:
+           return jsonify({"response": "Not Found"}), result
 
         return jsonify({"response": "Value saved !"}), 200
 
