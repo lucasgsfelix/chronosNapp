@@ -1,5 +1,6 @@
 """InfluxDB backend"""
 import re
+from kytos.core import log
 
 from influxdb import InfluxDBClient
 from influxdb import exceptions
@@ -22,7 +23,7 @@ def _query_assemble(clause, namespace, start, end, field=None,
     elif clause.upper() == 'DELETE':
         clause += f' FROM {namespace}'
     else:
-        raise Exception(f'Error. Invalid clause "{clause}".')
+        log.error(f'Error. Invalid clause "{clause}".')
 
     time_clause = " WHERE time "
     if start is not None:
@@ -43,10 +44,10 @@ def _query_assemble(clause, namespace, start, end, field=None,
 def _verify_namespace(namespace):
     field = None
     if namespace is None:
-        raise Exception("Error. Namespace cannot be NoneType.")
+        log.error("Error. Namespace cannot be NoneType.")
     elif not isinstance(namespace, str) or not re.match(r'\S+', namespace):
-        raise Exception(f"Error. Namespace '{namespace}' most be a string."
-                        f" Not {type(namespace).__name__}.")
+        log.error(f"Error. Namespace '{namespace}' most be a string."
+                  f" Not {type(namespace).__name__}.")
     elif '.' in namespace:
         field = namespace.split('.')[-1]
         namespace = '.'.join(namespace.split('.')[:-1])
@@ -96,7 +97,7 @@ class InfluxBackend:
         if isinstance(namespace, tuple):
             namespace = namespace[0]
         if not self._namespace_exists(namespace):
-            raise Exception("Namespace {} does not exist".format(namespace))
+            log.error("Namespace {} does not exist".format(namespace))
 
         validate_timestamp(start, end)
 
@@ -128,7 +129,7 @@ class InfluxBackend:
             params[key] = config.get(key, params[key])
 
         if not params['DBNAME']:
-            raise Exception("Error. Must specify database name.")
+            log.error("Error. Must specify database name.")
 
         self._host = params['HOST']
         self._port = params['PORT']
@@ -142,6 +143,7 @@ class InfluxBackend:
                                       username=self._username,
                                       password=self._password,
                                       database=self._database)
+
     def _create_database(self):
         self._client.create_database(self._database)
 
@@ -153,9 +155,9 @@ class InfluxBackend:
         try:
             self._client.write_points(data)
         except exceptions.InfluxDBClientError as error:
-            return error
+            log.error(error)
         except InvalidQuery:
-            raise Exception("Error inserting data to InfluxDB.")
+            log.error("Error inserting data to InfluxDB.")
             # return 400
 
     def _get_database(self):
@@ -181,18 +183,18 @@ class InfluxBackend:
         try:
             return self._client.query(query, chunked=True, chunk_size=0)
         except InvalidQuery:
-            raise Exception("Error. Query {} not valid" .format(query))
+            log.error("Error. Query {} not valid" .format(query))
 
     def _namespace_exists(self, namespace):
 
         if namespace is None:
-            raise Exception("Invalid namespace.")
+            log.error("Invalid namespace.")
         else:
             all_nspace = self._client.get_list_measurements()
             if not all_nspace:
-                raise Exception("Error. There are no valid database.")
+                log.error("Error. There are no valid database.")
             exist = list(filter(lambda x: x['name'] == namespace, all_nspace))
             if not exist:
-                raise Exception("Required namespace does not exist.")
+                log.error("Required namespace does not exist.")
             else:
                 return True
