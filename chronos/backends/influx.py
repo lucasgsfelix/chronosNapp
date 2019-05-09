@@ -5,7 +5,8 @@ from kytos.core import log
 from influxdb import InfluxDBClient
 from influxdb import exceptions
 
-from utils import validate_timestamp, now, iso_format_validation
+from napps.kytos.chronos.utils import (validate_timestamp, now,
+                                       iso_format_validation)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,

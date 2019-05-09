@@ -3,7 +3,8 @@ import os
 
 import pandas as pd
 
-from utils import validate_timestamp, now, iso_format_validation
+from napps.kytos.chronos.utils import (validate_timestamp, now,
+                                       iso_format_validation)
 
 
 def _put_value(value, store_value, timestamp=None):
@@ -92,7 +93,8 @@ class CSVBackend:
 
         dataframe.to_csv(file, sep=',', header=True, mode='w', index=False)
 
-    def get(self, file, start=None, end=None, method=None, fill=None, group=None):
+    def get(self, file, start=None, end=None, method=None,
+            fill=None, group=None):
         """Retrieve data from a csv file"""
         dataframe, file = self._load_file(file)
         search = _make_search(start, end, dataframe)

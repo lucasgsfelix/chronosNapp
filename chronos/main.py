@@ -3,10 +3,10 @@
 Napp to store itens along time
 """
 from flask import jsonify
-import settings
+from napps.kytos.chronos import settings
 # from napps.kytos.Cronos import settings
-from backends.csvbackend import CSVBackend
-from backends.influx import InfluxBackend
+from napps.kytos.chronos.backends.csvbackend import CSVBackend
+from napps.kytos.chronos.backends.influx import InfluxBackend
 from kytos.core import KytosNApp, log, rest
 
 
@@ -67,6 +67,7 @@ class Main(KytosNApp):
 
             self.execute_as_loop(30)  # 30-second interval.
         """
+        log.info("EXECUTING !")
 
     def shutdown(self):
         """Execute before tha NApp is unloaded."""
