@@ -49,15 +49,24 @@ class Main(KytosNApp):
 
         return jsonify({"response": "Values deleted !"}), 200
 
+    @rest('v1/namespace/', methods=['GET'])
+    @rest('v1/<namespace>/', methods=['GET'])
+    @rest('v1/<namespace>/<start>/', methods=['GET'])
+    @rest('v1/<namespace>/<end>/', methods=['GET'])
+    @rest('v1/<namespace>/<start>/<end>', methods=['GET'])
+    @rest('v1/<namespace>/<start>/<end>/interpol/<method>', methods=['GET'])
+    @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/',
+          methods=['GET'])
+    @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/<group>',
+          methods=['GET'])
     def get(self, namespace, start=None, end=None, method=None,
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
-
         result = self.backend.get(namespace, start, end, method, fill, group)
         if result is None:
-            return jsonify({"response": "Not Found"}), 404
+            return jsonify({"response": 'Not Found'}), 404
 
-        return jsonify(result), 200
+        return jsonify({"response": result}), 200
 
     def execute(self):
         """Run after the setup method execution.
