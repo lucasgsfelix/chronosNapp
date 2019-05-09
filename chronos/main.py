@@ -3,7 +3,7 @@
 Napp to store itens along time
 """
 from flask import jsonify
-import settings
+from napps.kytos.chronos import settings
 # from napps.kytos.Cronos import settings
 from backends.csvbackend import CSVBackend
 from backends.influx import InfluxBackend
