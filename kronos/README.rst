@@ -36,25 +36,18 @@ Events
 ########
 
 The NApp listens to events requesting operations. Every event must have a callback function to be executed right after the internal method returns. The signature of the callback function is described with each event.
-kytos.storehouse.create
+kytos.kronos.create
 
 kytos.kronos.save
 =======================
-Event requesting to save data in a namespace from backand.
+Event requesting to save data in a namespace from backend.
 
 kytos.kronos.get
 =======================
-Event requesting data in a namespace from backand.
+Event requesting data in a namespace from backend.
 
 kytos.kronos.delete
 =======================
-Event requesting to delete data in a namespace from backand.
+Event requesting to delete data in a namespace from backend.
 
-########
-Rest API
-########
-
-You can find a list of the available endpoints and example input/output in the
-'REST API' tab in this NApp's webpage in the `Kytos NApps Server
-<https://napps.kytos.io/kytos/storehouse>`_.
 
