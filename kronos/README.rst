@@ -21,7 +21,7 @@ To install this NApp, run:
 
 .. code:: shell
 
-   $ kytos napps install kytos/flow_manager
+   $ kytos napps install kytos/kronos
 
 ########
 Configuring
