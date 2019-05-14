@@ -30,21 +30,22 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<value>/<timestamp>', methods=['POST'])
     def save(self, namespace, value, timestamp=None):
         """Save the data in one of the backends."""
-
         result = self.backend.save(namespace, value, timestamp)
-        if result is not None:
+        if result in (400, 404):
             return jsonify({"response": "Not Found"}), result
 
         return jsonify({"response": "Value saved !"}), 201
 
     @rest('v1/<namespace>/', methods=['DELETE'])
-    @rest('v1/<namespace>/<start>', methods=['DELETE'])
-    @rest('v1/<namespace>/<end>', methods=['DELETE'])
+    @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
+    @rest('v1/<namespace>/end/<end>', methods=['DELETE'])
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
+        log.info(start)
+        log.info(end)
         result = self.backend.delete(namespace, start, end)
-        if result is not None:
+        if result in (400, 404):
             return jsonify({"response": "Not Found"}), 404
 
         return jsonify({"response": "Values deleted !"}), 200
@@ -63,7 +64,7 @@ class Main(KytosNApp):
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
         result = self.backend.get(namespace, start, end, method, fill, group)
-        if result is None:
+        if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
 
         return jsonify({"response": result}), 200

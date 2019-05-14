@@ -2,6 +2,8 @@
 from datetime import datetime
 import re
 
+from kytos.core import log
+
 
 def now():
     '''Return timestamp in ISO-8601 format'''
@@ -15,12 +17,15 @@ def validate_timestamp(start, end):
     if start is not None and end is not None:
         start, end = str(start), str(end)
         if start > end:
-            raise Exception("Invalid Data Range: {}, {}".format(start, end))
+            log.error("Invalid Data Range: {}, {}".format(start, end))
+            return 400
 
 
 def iso_format_validation(timestamp):
-    '''Verify if a timestamp is in isoformat.
-        If it's not, try to convert it.'''
+    '''
+        Verify if a timestamp is in isoformat.
+        If it's not, try to convert it.
+    '''
 
     if timestamp is None:
         return timestamp
@@ -45,7 +50,8 @@ def iso_format_validation(timestamp):
             timestamp = float(timestamp)
             iso = '%Y-%m-%dT%H:%M:%SZ'
             timestamp = datetime.utcfromtimestamp(timestamp).strftime(iso)
-        except Exception:
-            raise Exception("Error. Timestamp is not is ISO-8601 format.")
+        except ValueError:
+            log.error("Error. Timestamp is not is ISO-8601 format.")
+            return 400
 
     return timestamp

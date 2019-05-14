@@ -1,12 +1,12 @@
 """InfluxDB backend"""
 import re
-from kytos.core import log
 
 from influxdb import InfluxDBClient
 from influxdb import exceptions
 
+from kytos.core import log
 from napps.kytos.kronos.utils import (validate_timestamp, now,
-                                       iso_format_validation)
+                                      iso_format_validation)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -44,12 +44,17 @@ def _query_assemble(clause, namespace, start, end, field=None,
 
 def _verify_namespace(namespace):
     field = None
+
     if namespace is None:
         log.error("Error. Namespace cannot be NoneType.")
-    elif not isinstance(namespace, str) or not re.match(r'\S+', namespace):
+        return 400, 400
+
+    if not isinstance(namespace, str) or not re.match(r'\S+', namespace):
         log.error(f"Error. Namespace '{namespace}' most be a string."
                   f" Not {type(namespace).__name__}.")
-    elif '.' in namespace:
+        return 404, 404
+
+    if '.' in namespace:
         field = namespace.split('.')[-1]
         namespace = '.'.join(namespace.split('.')[:-1])
     return namespace, field
@@ -72,19 +77,28 @@ class InfluxBackend:
 
         timestamp must be on ISO-8601 format.
         """
-        if not isinstance(value, bool) and isinstance(value, int):
+        if re.match(r'[+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?', value):
+            value = float(value)
+        elif not isinstance(value, bool) and isinstance(value, int):
             value = float(value)
 
         timestamp = timestamp or now()
         timestamp = iso_format_validation(timestamp)
+        if timestamp == 400:
+            return timestamp
+
         namespace, field = _verify_namespace(namespace)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
+        if namespace in (400, 404):
+            return namespace
+
         data = [{
             'measurement': namespace,
             'time': timestamp,
             'fields': {field: value}
         }]
+
         return self._write_endpoints(data)
 
     def delete(self, namespace, start=None, end=None):
@@ -97,12 +111,19 @@ class InfluxBackend:
         namespace = _verify_namespace(namespace)
         if isinstance(namespace, tuple):
             namespace = namespace[0]
+
+        if namespace in (400, 404):
+            return namespace
+
         if not self._namespace_exists(namespace):
             log.error("Namespace {} does not exist".format(namespace))
+            return 400
 
-        validate_timestamp(start, end)
+        if validate_timestamp(start, end) == 400:
+            return 400
 
         self._delete_points(namespace, start, end)
+        return 200
 
     def get(self, namespace, start=None, end=None,
             method=None, fill=None, group=None):
@@ -112,7 +133,8 @@ class InfluxBackend:
         namespace, field = _verify_namespace(namespace)
         if not self._namespace_exists(namespace):
             return None
-        validate_timestamp(start, end)
+        if validate_timestamp(start, end) == 400:
+            return 400
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
         return points
@@ -162,6 +184,8 @@ class InfluxBackend:
             log.error("Error inserting data to InfluxDB.")
             return 400
 
+        return 200
+
     def _get_database(self):
         """Verify if a database exists."""
         all_dbs = self._client.get_list_database()
@@ -186,17 +210,21 @@ class InfluxBackend:
             return self._client.query(query, chunked=True, chunk_size=0)
         except InvalidQuery:
             log.error("Error. Query {} not valid" .format(query))
+            return 400
 
     def _namespace_exists(self, namespace):
 
         if namespace is None:
             log.error("Invalid namespace.")
-        else:
-            all_nspace = self._client.get_list_measurements()
-            if not all_nspace:
-                log.error("Error. There are no valid database.")
-            exist = list(filter(lambda x: x['name'] == namespace, all_nspace))
-            if not exist:
-                log.error("Required namespace does not exist.")
-            else:
-                return True
+            return 400
+
+        all_nspace = self._client.get_list_measurements()
+        if not all_nspace:
+            log.error("Error. There are no valid database.")
+            return 400
+        exist = list(filter(lambda x: x['name'] == namespace, all_nspace))
+        if not exist:
+            log.error("Required namespace does not exist.")
+            return 400
+
+        return True
