@@ -42,18 +42,15 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
-        log.info(start)
-        log.info(end)
         result = self.backend.delete(namespace, start, end)
         if result in (400, 404):
             return jsonify({"response": "Not Found"}), 404
 
         return jsonify({"response": "Values deleted !"}), 200
 
-    @rest('v1/namespace/', methods=['GET'])
     @rest('v1/<namespace>/', methods=['GET'])
-    @rest('v1/<namespace>/<start>/', methods=['GET'])
-    @rest('v1/<namespace>/<end>/', methods=['GET'])
+    @rest('v1/<namespace>/start/<start>/', methods=['GET'])
+    @rest('v1/<namespace>/end/<end>/', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/',
@@ -67,7 +64,7 @@ class Main(KytosNApp):
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
 
-        return jsonify({"response": result}), 200
+        return jsonify({"response": 'Found'}), 202
 
     def execute(self):
         """Run after the setup method execution.
