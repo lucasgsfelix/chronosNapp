@@ -63,8 +63,7 @@ class Main(KytosNApp):
         result = self.backend.get(namespace, start, end, method, fill, group)
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
-
-        return jsonify({"response": 'Found'}), result
+        return jsonify(result), 200
 
     def execute(self):
         """Run after the setup method execution.

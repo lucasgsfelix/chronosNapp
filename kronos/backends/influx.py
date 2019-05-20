@@ -61,11 +61,16 @@ def _verify_namespace(namespace):
     return namespace, field
 
 
-def _parse_result_set(result):
-
+def _parse_result_set(result, field):
+    
     if result:
-        json_values = json.dumps(list(result)[0])
+        remove_tokens = ['[', '"[', ']', '"']
+        values = list(map(lambda x:(x['time'], x[field]), list(result)[0]))
+        json_values = json.dumps(values).replace('],', '\n').replace(', ', '\t')
+        for i in remove_tokens:
+            json_values = ''.join((filter((i).__ne__, json_values)))
         return json_values
+    
 
     return "Empty Set"
 
@@ -147,8 +152,8 @@ class InfluxBackend:
             return 400
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
-
-        return _parse_result_set(points)
+        points = _parse_result_set(points, field)
+        return points
 
     def _read_config(self, settings):
 
