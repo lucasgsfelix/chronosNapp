@@ -64,7 +64,7 @@ class Main(KytosNApp):
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
 
-        return jsonify({"response": 'Found'}), 202
+        return jsonify({"response": 'Found'}), result
 
     def execute(self):
         """Run after the setup method execution.
