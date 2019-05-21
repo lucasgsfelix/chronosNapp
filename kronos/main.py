@@ -2,8 +2,6 @@
 
 Napp to store itens along time
 """
-
-import json
 from flask import jsonify
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
@@ -67,8 +65,6 @@ class Main(KytosNApp):
             return jsonify({"response": 'Not Found'}), 404
 
         elif isinstance(result, tuple):  # time, value, code
-            #result[0] = json.dumps(result[0])
-            #result[1] = json.dumps(result[1])
             return jsonify({"response": (result[0], result[1])}), 200
 
         return jsonify(result), 200
