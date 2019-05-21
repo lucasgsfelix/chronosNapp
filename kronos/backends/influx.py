@@ -1,6 +1,5 @@
 """InfluxDB backend"""
 import re
-import json
 
 from influxdb import InfluxDBClient
 from influxdb import exceptions
@@ -64,15 +63,11 @@ def _verify_namespace(namespace):
 def _parse_result_set(result, field):
     
     if result:
-        remove_tokens = ['[', '"[', ']', '"']
-        values = list(map(lambda x:(x['time'], x[field]), list(result)[0]))
-        json_values = json.dumps(values).replace('],', '\n').replace(', ', '\t')
-        for i in remove_tokens:
-            json_values = ''.join((filter((i).__ne__, json_values)))
-        return json_values
-    
+        time_value, value = zip(*[(res['time'], res[field]) for res in list(result)[0]])
 
-    return "Empty Set"
+        return (time_value, value)
+
+    return None
 
 
 class InvalidQuery(Exception):
@@ -152,8 +147,7 @@ class InfluxBackend:
             return 400
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
-        points = _parse_result_set(points, field)
-        return points
+        return _parse_result_set(points, field)
 
     def _read_config(self, settings):
 

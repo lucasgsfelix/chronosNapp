@@ -2,9 +2,10 @@
 
 Napp to store itens along time
 """
+
+import json
 from flask import jsonify
 from napps.kytos.kronos import settings
-# from napps.kytos.Cronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
 from kytos.core import KytosNApp, log, rest
@@ -61,8 +62,15 @@ class Main(KytosNApp):
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
         result = self.backend.get(namespace, start, end, method, fill, group)
+
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
+
+        elif isinstance(result, tuple):  # time, value, code
+            #result[0] = json.dumps(result[0])
+            #result[1] = json.dumps(result[1])
+            return jsonify({"response": (result[0], result[1])}), 200
+
         return jsonify(result), 200
 
     def execute(self):
