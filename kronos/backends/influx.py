@@ -61,7 +61,7 @@ def _verify_namespace(namespace):
 
 
 def _parse_result_set(result, field):
-    
+
     if result:
         time_value, value = zip(*[(res['time'], res[field]) for res in list(result)[0]])
 
